@@ -7,8 +7,11 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
 app.use('/api/jobs', require('./modules/jobs/jobsRouter'));
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/proposals', require('./routes/proposalRoutes'));
+app.use('/api/hire', require('./routes/hireRoutes'));
 
 // Test Route
 app.get('/', (req, res) => {
