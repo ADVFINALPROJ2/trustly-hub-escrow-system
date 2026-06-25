@@ -4,16 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-<<<<<<< HEAD
   "start": "node server.js",
   "dev": "node server.js"
 },
-=======
+    "start": "node server.js",
+    "dev": "node server.js",
     "migrate:up": "node-pg-migrate up",
     "migrate:down": "node-pg-migrate down",
     "migrate:status": "node-pg-migrate status"
   },
->>>>>>> 0c8f2916476aca4ad4f584b0ebfcb4c897a06e33
   "keywords": [],
   "author": "",
   "license": "ISC",
