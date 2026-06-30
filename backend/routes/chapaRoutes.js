@@ -496,13 +496,13 @@ router.post('/release', verifyToken, async (req, res) => {
 router.all('/return', async (req, res) => {
   try {
     const { escrowId, tx_ref } = req.query;
-    console.log(`[CHAPA RETURN] Redirect received: escrowId=${escrowId}, tx_ref=${tx_ref}`);
+    const ref = tx_ref || (escrowId ? (await pool.query('SELECT tx_ref FROM escrow_transactions WHERE id = $1', [escrowId])).rows[0]?.tx_ref : null);
+    console.log(`[CHAPA RETURN] Redirect received: escrowId=${escrowId}, tx_ref=${tx_ref}, resolved_ref=${ref}`);
 
-    // Only update if both escrowId and tx_ref match a pending escrow
-    if (tx_ref && escrowId) {
+    if (escrowId && ref) {
       const escrowResult = await pool.query(
-        'SELECT * FROM escrow_transactions WHERE id = $1 AND tx_ref = $2',
-        [escrowId, tx_ref]
+        'SELECT * FROM escrow_transactions WHERE id = $1',
+        [escrowId]
       );
 
       if (escrowResult.rows.length > 0) {
@@ -530,11 +530,10 @@ router.all('/return', async (req, res) => {
           }
         }
       } else {
-        console.log(`[CHAPA RETURN] No matching escrow found for escrowId=${escrowId}, tx_ref=${tx_ref}`);
+        console.log(`[CHAPA RETURN] No matching escrow found for escrowId=${escrowId}`);
       }
     }
 
-    // Redirect to frontend escrow page
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     res.redirect(`${frontendUrl}/escrow/${escrowId}`);
   } catch (error) {
