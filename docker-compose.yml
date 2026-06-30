@@ -29,9 +29,10 @@ services:
       - NODE_ENV=development
       - PORT=4000
       - DATABASE_URL=postgresql://postgres:54321@db:5432/trustly_hub
-      - JWT_SECRET=your_super_secret_key_make_it_long_and_random_12345
-      - CHAPA_SECRET_KEY=CHASECK_TEST-VuHTlKrrL11RdyXH7hSh0HDtqZozdztd
-      - NGROK_URL=https://strict-revered-diffused.ngrok-free.app
+      - JWT_SECRET=your_secret_key_here
+      - CHAPA_SECRET_KEY=CHASECK_TEST-r3jkwIzNreOc8qCH0j6ZbbUwLGLmIaGJ
+      - CHAPA_WEBHOOK_SECRET=my_trustly_secret_project_hash_2026
+      - NGROK_URL=https://ngrok-free.dev
       - FRONTEND_URL=http://localhost:3000
     depends_on:
       - db
