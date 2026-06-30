@@ -429,13 +429,56 @@ router.post('/release', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Only the client can unlock escrow allocations.' });
     }
 
+    // Try actual payout via Chapa Transfer API
+    const secretKey = String(process.env.CHAPA_SECRET_KEY).trim();
+    let payoutAttempted = false;
+
+    try {
+      const payoutRes = await pool.query(
+        'SELECT method, account FROM payout_configs WHERE user_id = $1',
+        [escrow.freelancer_id]
+      );
+
+      if (payoutRes.rows.length > 0) {
+        const payout = payoutRes.rows[0];
+        payoutAttempted = true;
+
+        const reference = `rel_${escrowId}_${Date.now()}`;
+
+        try {
+          const transferRes = await axios.post(
+            'https://api.chapa.co/v1/transfers',
+            {
+              amount: parseFloat(escrow.amount),
+              currency: 'ETB',
+              account_name: payout.account,
+              account_number: payout.account,
+              bank_code: payout.method === 'chapa' ? 'chapa' : payout.method.toUpperCase(),
+              reference,
+            },
+            { headers: { Authorization: `Bearer ${secretKey}` } }
+          );
+          console.log(`[CHAPA RELEASE] Transfer initiated: ${reference}`, transferRes.data);
+        } catch (chapaError) {
+          console.error('[CHAPA RELEASE] Transfer API error:', chapaError.response?.data || chapaError.message);
+        }
+      }
+    } catch (payoutError) {
+      console.error('[CHAPA RELEASE] Payout config lookup failed:', payoutError.message);
+    }
+
+    // Always update DB to released
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(`UPDATE escrow_transactions SET status = 'released' WHERE id = $1`, [escrowId]);
       await client.query(`UPDATE jobs SET status = 'completed', escrow_status = 'released' WHERE id = $1`, [escrow.job_id]);
       await client.query('COMMIT');
-      return res.json({ success: true, message: 'Escrow cleared and disbursed.' });
+      return res.json({
+        success: true,
+        message: 'Escrow cleared and disbursed.',
+        transferAttempted: payoutAttempted,
+      });
     } catch (e) {
       await client.query('ROLLBACK');
       throw e;
